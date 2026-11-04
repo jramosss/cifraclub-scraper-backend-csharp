@@ -557,10 +557,11 @@ public class Scraper
 
         var metrics = governor.GetMetrics(sw.Elapsed);
 
-        // Maintain original order of URLs
+        // Order songs alphabetically by title
         var songs = songUrls
             .Where(songsMap.ContainsKey)
             .Select(u => songsMap[u])
+            .OrderBy(s => s.Title, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
 
         var uniqueArtists = songs

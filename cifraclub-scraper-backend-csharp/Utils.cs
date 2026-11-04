@@ -129,7 +129,8 @@ pre b {
 
     public static string GenerateHtml(IEnumerable<SongDto> songs)
     {
-        return GenerateHtml(songs.Select(s => s.Content).ToArray());
+        var sorted = songs.OrderBy(s => s.Title, StringComparer.CurrentCultureIgnoreCase).ToArray();
+        return GenerateHtml(sorted.Select(s => s.Content).ToArray());
     }
 
     public static string GenerateHtml(string[] contents)
