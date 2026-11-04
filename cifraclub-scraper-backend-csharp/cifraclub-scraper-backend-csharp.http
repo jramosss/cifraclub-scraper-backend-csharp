@@ -1,0 +1,35 @@
+@cifraclub_scraper_backend_csharp_HostAddress = http://localhost:8015
+
+### Health Check
+GET {{cifraclub_scraper_backend_csharp_HostAddress}}/
+Accept: application/json
+
+###
+
+### Scrape Artist Songs (POST)
+POST {{cifraclub_scraper_backend_csharp_HostAddress}}/scrape
+Content-Type: application/json
+
+{
+  "url": "https://www.cifraclub.com.br/los-cafres/",
+  "limit": 5
+}
+
+###
+
+### Scrape Artist Songs (GET)
+GET {{cifraclub_scraper_backend_csharp_HostAddress}}/scrape?url=https://www.cifraclub.com.br/los-cafres/&limit=5
+Accept: application/json
+
+###
+
+### Generate PDF from URL
+POST {{cifraclub_scraper_backend_csharp_HostAddress}}/pdf
+Content-Type: application/json
+
+{
+  "url": "https://www.cifraclub.com.br/los-cafres/",
+  "limit": 3
+}
+
+###

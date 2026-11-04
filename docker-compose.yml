@@ -1,0 +1,13 @@
+services:
+  cifraclub-scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8015:8015"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8015
+      - HOST_USER_HOME=${HOME}
+    volumes:
+      - ${HOME}:${HOME}
