@@ -476,20 +476,36 @@ public class Scraper
             ? WebUtility.HtmlDecode(composerNode.InnerText).Trim()
             : string.Empty;
 
-        // Clean pre element (strip inline styles that break monospace sizing)
-        var preNode = doc.DocumentNode.SelectSingleNode("//pre");
-        if (preNode != null)
+        // Extract all pre elements (CifraClub paginates multi-page songs into separate pre tags)
+        var preNodes = doc.DocumentNode.SelectNodes("//pre");
+        string content;
+
+        if (preNodes == null || preNodes.Count == 0)
         {
-            preNode.Attributes.Remove("style");
+            var composerHtml = !string.IsNullOrWhiteSpace(composer)
+                ? $"<small>Composición de: {WebUtility.HtmlEncode(composer)}</small>"
+                : string.Empty;
+
+            content = $@"<section class=""cifra-song"">
+    <header class=""cifra-header"">
+        <h1>{WebUtility.HtmlEncode(title)}</h1>
+        <h2>{WebUtility.HtmlEncode(artist)}</h2>
+        {composerHtml}
+    </header>
+    <div class=""cifra-body""></div>
+</section>";
         }
-        var preHtml = preNode?.OuterHtml ?? string.Empty;
+        else if (preNodes.Count == 1)
+        {
+            var pre = preNodes[0];
+            pre.Attributes.Remove("style");
+            var preHtml = pre.OuterHtml;
 
-        // Build clean, styled semantic song section with explicit page breaks
-        var composerHtml = !string.IsNullOrWhiteSpace(composer)
-            ? $"<small>{WebUtility.HtmlEncode(composer)}</small>"
-            : string.Empty;
+            var composerHtml = !string.IsNullOrWhiteSpace(composer)
+                ? $"<small>Composición de: {WebUtility.HtmlEncode(composer)}</small>"
+                : string.Empty;
 
-        var content = $@"<section class=""cifra-song"">
+            content = $@"<section class=""cifra-song"">
     <header class=""cifra-header"">
         <h1>{WebUtility.HtmlEncode(title)}</h1>
         <h2>{WebUtility.HtmlEncode(artist)}</h2>
@@ -499,6 +515,51 @@ public class Scraper
         {preHtml}
     </div>
 </section>";
+        }
+        else
+        {
+            // Multi-page song: generate a distinct page section for every pre block
+            var pages = new List<string>(preNodes.Count);
+            for (int i = 0; i < preNodes.Count; i++)
+            {
+                var pre = preNodes[i];
+                pre.Attributes.Remove("style");
+                var preHtml = pre.OuterHtml;
+
+                string headerHtml;
+                if (i == 0)
+                {
+                    var composerHtml = !string.IsNullOrWhiteSpace(composer)
+                        ? $"<small>Composición de: {WebUtility.HtmlEncode(composer)}</small>"
+                        : string.Empty;
+
+                    headerHtml = $@"<header class=""cifra-header"">
+        <h1>{WebUtility.HtmlEncode(title)}</h1>
+        <h2>{WebUtility.HtmlEncode(artist)}</h2>
+        {composerHtml}
+        <small style=""color: #757575;"">Página 1 / {preNodes.Count}</small>
+    </header>";
+                }
+                else
+                {
+                    headerHtml = $@"<header class=""cifra-header cifra-header-cont"">
+        <div style=""font-size: 13px; font-weight: bold; color: #757575;"">
+            {WebUtility.HtmlEncode(title)} - {WebUtility.HtmlEncode(artist)}
+            <span style=""font-size: 11px; font-weight: normal; margin-left: 6px;"">(Página {i + 1} / {preNodes.Count})</span>
+        </div>
+    </header>";
+                }
+
+                pages.Add($@"<section class=""cifra-song"">
+    {headerHtml}
+    <div class=""cifra-body"">
+        {preHtml}
+    </div>
+</section>");
+            }
+
+            content = string.Join("\n", pages);
+        }
 
         return new SongDto(title, artist, songUrl, printUrl, content);
     }
